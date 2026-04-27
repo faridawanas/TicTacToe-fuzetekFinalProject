@@ -1,0 +1,65 @@
+# =========================
+# C++ / Build outputs
+# =========================
+*.o
+*.obj
+*.exe
+*.out
+*.app
+*.a
+*.so
+*.dll
+
+# build folders
+build/
+cmake-build-*/
+Debug/
+Release/
+x64/
+x86/
+
+# =========================
+# Visual Studio
+# =========================
+.vs/
+*.VC.db
+*.VC.VC.opendb
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# =========================
+# Code::Blocks / Dev-C++
+# =========================
+*.depend
+*.layout
+*.cbp
+*.workspace
+
+# =========================
+# CLion / CMake
+# =========================
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# =========================
+# MacOS / Linux
+# =========================
+.DS_Store
+*.dSYM/
+
+# =========================
+# Logs / Temp files
+# =========================
+*.log
+*.tmp
+*.swp
+
+# =========================
+# VS Code
+# =========================
+.vscode/
