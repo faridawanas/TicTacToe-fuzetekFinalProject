@@ -11,16 +11,88 @@ private:
     const int size;
 
 public:
-    Board(int size = 3);
+    Board(int size = 3): size(size)
+    {
+        grid.resize(size, vector<char>(size, ' '));
+    }
 
-    void display() const;
+    void display() const
+    {
+        for (int i = 0; i < size; i++)
+        {
+            for (int j = 0; j < size; j++)
+            {
+                cout << grid[i][j];
+                if (j < size - 1) cout << " | ";
+            }
+            cout << endl;
+
+            if (i < size - 1)
+            {
+                for (int k = 0; k < size * 4 - 3; k++) cout << "-";
+                cout << endl;
+            }
+        }
+    }
+
     bool makeMove(int row, int col, char symbol);
     bool isValidMove(int row, int col) const;
-    bool checkWin(char symbol) const;
-    bool isFull() const;
-    char getCell(int row, int col) const;
-    void reset();
-    int getSize() const;
+    bool checkWin(char symbol) const
+    {
+        for (int i = 0; i < size; i++)
+        {
+            bool rowWin = true, colWin = true;
+
+            for (int j = 0; j < size; j++)
+            {
+                if (grid[i][j] != symbol)
+                    rowWin = false;
+                if (grid[j][i] != symbol)
+                    colWin = false;
+            }
+
+            if (rowWin || colWin)
+                return true;
+        }
+
+        bool diag1 = true, diag2 = true;
+
+        for (int i = 0; i < size; i++)
+        {
+            if (grid[i][i] != symbol)
+                diag1 = false;
+            if (grid[i][size - i - 1] != symbol)
+                diag2 = false;
+        }
+
+        return diag1 || diag2;
+    }
+
+    bool isFull() const
+    {
+        for (auto& row : grid)
+            for (auto cell : row)
+                if (cell == ' ') return false;
+
+        return true;
+    }
+
+    char getCell(int row, int col) const
+    {
+        return grid[row][col];
+    }
+
+    void reset()
+    {
+        for (auto& row : grid)
+            for (auto& cell : row)
+                cell = ' ';
+
+    }
+    int getSize() const
+    {
+        return size;
+    }
 };
 
 
@@ -88,7 +160,12 @@ public:
     ~Game(); // To clean up pointers if needed
 
     void start();
-    void showMenu();
+    void showMenu()
+    {
+        cout << "1. Player vs Player\n";
+        cout << "2. Player vs AI (Easy)\n";
+        cout << "3. Player vs AI (Hard)\n";
+    }
 
 private:
     void setupPvP();
@@ -96,9 +173,23 @@ private:
     void switchPlayer();
     void handleHumanMove(Player* player);
     void handleAIMove(AIPlayer* aiPlayer);
-    bool checkGameEnd();
-    void displayResult() const;
-    void reset();
+
+    bool checkGameEnd()
+    {
+        return board.checkWin('X') || board.checkWin('O') || board.isFull();
+    }
+
+    void displayResult() const
+    {
+        if (board.checkWin('X')) cout << "X wins!\n";
+        else if (board.checkWin('O')) cout << "O wins!\n";
+        else cout << "Draw!\n";
+    }
+
+    void reset()
+    {
+        board.reset();
+    }
 };
 
 int main()
