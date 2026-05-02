@@ -104,7 +104,8 @@ protected:
     char symbol;
 
 public:
-    Player(const string& name, char symbol){
+    Player(const string& name, char symbol)
+    {
         this->name = name;
         this->symbol = symbol;
     }
@@ -113,13 +114,16 @@ public:
     // Pure virtual method
     virtual void getMove(int& row, int& col) = 0;
 
-    string getName() const{
+    string getName() const
+    {
         return name;
     }
-    char getSymbol() const{
+    char getSymbol() const
+    {
         return symbol;
     }
-    void setName(const string& name){
+    void setName(const string& name)
+    {
         this->name = name;
     }
 };
@@ -177,12 +181,14 @@ public:
     }
 
 private:
-    void setupPvP(const string& name p1_name, const string& name p2_name, char p1_sym, char p2_sym){
-        player1 = new Player(p1_name, p1_sym);
-        player2 = new Player(p2_name, p2_sym);
+    void setupPvP(const string& p1_name, const string& p2_name, char p1_sym, char p2_sym)
+    {
+        player1 = new HumanPlayer(p1_name, p1_sym);
+        player2 = new HumanPlayer(p2_name, p2_sym);
     }
     void setupPvC(Difficulty difficulty);
-    void switchPlayer(){
+    void switchPlayer()
+    {
         if(currentPlayer == nullptr)
             return;
         if(currentPlayer == player1)
@@ -247,9 +253,49 @@ void Game::handleHumanMove(Player* player)
     }
 }
 
-int main()
+void Game::start()
 {
-    Game ticTacToe;
-    ticTacToe.start();
-    return 0;
+    int choice;
+    showMenu();
+    cin >> choice;
+
+    if (choice == 1)
+    {
+        string name1, name2;
+        cout << "Enter Player name(symbol = 'o'): ";
+        cin >> name1;
+        cout << "Enter Player name(symbol = 'x'): ";
+        cin >> name1;
+        setupPvP(name1, name2, 'o', 'x');
+    }
+    else if (choice == 2) setupPvC(EASY);
+    else setupPvC(HARD);
+
+    currentPlayer = player1;
+
+    while (true)
+    {
+        board.display();
+
+        if (dynamic_cast<AIPlayer*>(currentPlayer))
+            handleAIMove((AIPlayer*)currentPlayer);
+        else
+            handleHumanMove(currentPlayer);
+
+        if (checkGameEnd())
+        {
+            board.display();
+            displayResult();
+            break;
+        }
+
+        switchPlayer();
+    }
 }
+
+    int main()
+    {
+        Game ticTacToe;
+        ticTacToe.start();
+        return 0;
+    }
