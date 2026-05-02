@@ -101,6 +101,42 @@ private:
     void reset();
 };
 
+// Board::isValidMove
+bool Board::isValidMove(int row, int col) const
+{
+    if (row < 0 || row >= size || col < 0 || col >= size)
+        return false;
+
+    return grid[row][col] == ' ';
+}
+
+// Board::makeMove
+bool Board::makeMove(int row, int col, char symbol)
+{
+    if (!isValidMove(row, col))
+        return false;
+
+    grid[row][col] = symbol;
+    return true;
+}
+
+// Game::handleHumanMove
+void Game::handleHumanMove(Player* player)
+{
+    int row, col;
+
+    while (true)
+    {
+        player->getMove(row, col);
+
+        row--;
+        col--;
+
+        if (board.makeMove(row, col, player->getSymbol()))
+            break;
+    }
+}
+
 int main()
 {
     Game ticTacToe;
