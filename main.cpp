@@ -104,15 +104,24 @@ protected:
     char symbol;
 
 public:
-    Player(const string& name, char symbol);
+    Player(const string& name, char symbol){
+        this->name = name;
+        this->symbol = symbol;
+    }
     virtual ~Player() {} // Good practice for inheritance
 
     // Pure virtual method
     virtual void getMove(int& row, int& col) = 0;
 
-    string getName() const;
-    char getSymbol() const;
-    void setName(const string& name);
+    string getName() const{
+        return name;
+    }
+    char getSymbol() const{
+        return symbol;
+    }
+    void setName(const string& name){
+        this->name = name;
+    }
 };
 
 class HumanPlayer : public Player
@@ -168,9 +177,19 @@ public:
     }
 
 private:
-    void setupPvP();
+    void setupPvP(const string& name p1_name, const string& name p2_name, char p1_sym, char p2_sym){
+        player1 = new Player(p1_name, p1_sym);
+        player2 = new Player(p2_name, p2_sym);
+    }
     void setupPvC(Difficulty difficulty);
-    void switchPlayer();
+    void switchPlayer(){
+        if(currentPlayer == nullptr)
+            return;
+        if(currentPlayer == player1)
+            currentPlayer = player2;
+        else
+            currentPlayer = player1;
+    }
     void handleHumanMove(Player* player);
     void handleAIMove(AIPlayer* aiPlayer);
 
