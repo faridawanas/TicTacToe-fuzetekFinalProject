@@ -64,15 +64,102 @@ private:
     Difficulty difficulty;
 
 public:
-    AIPlayer(const string& name, char symbol, Difficulty difficulty);
+    AIPlayer(const string& name, char symbol, Difficulty difficulty):Player(name,symbol) {
+        setDifficulty(difficulty);
+    };
 
     void getMove(int& row, int& col) override;
-    void setDifficulty(Difficulty newDifficulty);
+    void setDifficulty(Difficulty newDifficulty) {
+        difficulty = newDifficulty;
+
+    };
 
 private:
-    void getRandomMove(const Board& board, int& row, int& col) const;
-    void getBestMove(const Board& board, int& row, int& col) const; // Minimax
-    int evaluateBoard(const Board& board) const;
+    void getRandomMove(const Board& board, int& row, int& col) const {
+
+        row=(rand()%3);
+        col=(rand()%3);
+        while(!board.isValidMove(row,col)) {
+            row=(rand()%3);
+            col=(rand()%3);
+        };
+
+    };
+
+    int minimax(Board b, bool isMax) {
+
+        int score = evaluateBoard(b);
+
+        if (score == 10 || score == -10 || b.isFull())
+            return score;
+
+        if (isMax) {
+            int best = -1000;
+
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+
+                    if (b.isValidMove(i, j)) {
+                        Board newBoard = b;
+                        newBoard.makeMove(i, j, symbol);
+
+                        best = max(best, minimax(newBoard, false));
+                    }
+                }
+            }
+
+            return best;
+        }
+        else {
+            int best = 1000;
+            char opp = (symbol == 'X') ? 'O' : 'X';
+
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+
+                    if (b.isValidMove(i, j)) {
+                        Board newBoard = b;
+                        newBoard.makeMove(i, j, opp);
+
+                        best = min(best, minimax(newBoard, true));
+                    }
+                }
+            }
+
+            return best;
+        }
+    }
+    void getBestMove(const Board& board, int& row, int& col) {
+
+        int bestVal = -1000;
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+
+                if (board.isValidMove(i, j)) {
+
+                    Board newBoard = board;
+                    newBoard.makeMove(i, j, symbol);
+
+                    int moveVal = minimax(newBoard, false);
+
+                    if (moveVal > bestVal) {
+                        bestVal = moveVal;
+                        row = i;
+                        col = j;
+                    }
+                }
+            }
+        }
+    }
+
+
+
+    int evaluateBoard(const Board& board) const {
+        if (board.checkWin('X')) return (symbol == 'X' ? 10 : -10);
+        if (board.checkWin('O')) return (symbol == 'O' ? 10 : -10);
+        return 0;
+    }
 };
 
 class Game
@@ -92,10 +179,22 @@ public:
 
 private:
     void setupPvP();
-    void setupPvC(Difficulty difficulty);
+    void setupPvC(Difficulty difficulty) {
+        if(difficulty == EASY) {
+
+            player2=new AIPlayer(player2->getName(),player2->getSymbol(),EASY);
+        }
+        else if(difficulty == HARD) {
+            player2=new AIPlayer(player2->getName(),player2->getSymbol(),HARD);
+        }
+    };
     void switchPlayer();
     void handleHumanMove(Player* player);
-    void handleAIMove(AIPlayer* aiPlayer);
+    void handleAIMove(AIPlayer* aiPlayer) {
+        int r,c;
+        aiPlayer->getMove(r,c);
+          board.makeMove(r,c,aiPlayer->getSymbol());
+    };
     bool checkGameEnd();
     void displayResult() const;
     void reset();
