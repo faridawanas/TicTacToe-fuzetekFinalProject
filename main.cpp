@@ -1,6 +1,7 @@
 #include <vector>
 #include <iostream>
 #include <string>
+#include <algorithm>
 
 using namespace std;
 
@@ -112,7 +113,7 @@ public:
     virtual ~Player() {} // Good practice for inheritance
 
     // Pure virtual method
-    virtual void getMove(int& row, int& col) = 0;
+    virtual void getMove(const Board& board, int& row, int& col) = 0;
 
     string getName() const
     {
@@ -134,7 +135,7 @@ public:
     HumanPlayer(const string& name, char symbol)
         : Player(name, symbol) {}
 
-    void getMove(int& row, int& col) override
+    void getMove(const Board& board, int& row, int& col) override
     {
         cin >> row >> col;
     }
@@ -149,15 +150,127 @@ private:
     Difficulty difficulty;
 
 public:
-    AIPlayer(const string& name, char symbol, Difficulty difficulty);
+    AIPlayer(const string& name, char symbol, Difficulty difficulty):Player(name,symbol)
+    {
+        setDifficulty(difficulty);
+    };
 
-    void getMove(int& row, int& col) override;
-    void setDifficulty(Difficulty newDifficulty);
+    void getMove(const Board& board, int& row, int& col) override
+    {
+        if (difficulty == EASY)
+            getRandomMove(board, row, col);
+        else
+            getBestMove(board, row, col);
+    }
+    void setDifficulty(Difficulty newDifficulty)
+    {
+        difficulty = newDifficulty;
+
+    };
 
 private:
-    void getRandomMove(const Board& board, int& row, int& col) const;
-    void getBestMove(const Board& board, int& row, int& col) const; // Minimax
-    int evaluateBoard(const Board& board) const;
+    void getRandomMove(const Board& board, int& row, int& col) const
+    {
+
+        row=(rand()%3);
+        col=(rand()%3);
+        while(!board.isValidMove(row,col))
+        {
+            row=(rand()%3);
+            col=(rand()%3);
+        };
+
+    };
+
+    int minimax(Board b, bool isMax)
+    {
+
+        int score = evaluateBoard(b);
+
+        if (score == 10 || score == -10 || b.isFull())
+            return score;
+
+        if (isMax)
+        {
+            int best = -1000;
+
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+
+                    if (b.isValidMove(i, j))
+                    {
+                        Board newBoard = b;
+                        newBoard.makeMove(i, j, symbol);
+
+                        best = max(best, minimax(newBoard, false));
+                    }
+                }
+            }
+
+            return best;
+        }
+        else
+        {
+            int best = 1000;
+            char opp = (symbol == 'X') ? 'O' : 'X';
+
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+
+                    if (b.isValidMove(i, j))
+                    {
+                        Board newBoard = b;
+                        newBoard.makeMove(i, j, opp);
+
+                        best = min(best, minimax(newBoard, true));
+                    }
+                }
+            }
+
+            return best;
+        }
+    }
+    void getBestMove(const Board& board, int& row, int& col)
+    {
+
+        int bestVal = -1000;
+
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+
+                if (board.isValidMove(i, j))
+                {
+
+                    Board newBoard = board;
+                    newBoard.makeMove(i, j, symbol);
+
+                    int moveVal = minimax(newBoard, false);
+
+                    if (moveVal > bestVal)
+                    {
+                        bestVal = moveVal;
+                        row = i;
+                        col = j;
+                    }
+                }
+            }
+        }
+    }
+
+
+
+    int evaluateBoard(const Board& board) const
+    {
+        if (board.checkWin('X')) return (symbol == 'X' ? 10 : -10);
+        if (board.checkWin('O')) return (symbol == 'O' ? 10 : -10);
+        return 0;
+    }
 };
 
 class Game
@@ -169,8 +282,12 @@ private:
     Player* currentPlayer;
 
 public:
-    Game();
-    ~Game(); // To clean up pointers if needed
+    Game(): board(3), player1(nullptr), player2(nullptr), currentPlayer(nullptr) {}
+    ~Game()
+    {
+        delete player1;
+        delete player2;
+    }
 
     void start();
     void showMenu()
@@ -186,7 +303,15 @@ private:
         player1 = new HumanPlayer(p1_name, p1_sym);
         player2 = new HumanPlayer(p2_name, p2_sym);
     }
-    void setupPvC(Difficulty difficulty);
+    void setupPvC(Difficulty difficulty)
+    {
+        string name;
+        cout << "Enter your name: ";
+        cin >> name;
+
+        player1 = new HumanPlayer(name, 'X');
+        player2 = new AIPlayer("Computer", 'O', difficulty);
+    }
     void switchPlayer()
     {
         if(currentPlayer == nullptr)
@@ -197,7 +322,20 @@ private:
             currentPlayer = player1;
     }
     void handleHumanMove(Player* player);
-    void handleAIMove(AIPlayer* aiPlayer);
+    void handleAIMove(AIPlayer* aiPlayer)
+    {
+
+        int r, c;
+
+        while (true)
+        {
+            aiPlayer->getMove(board, r, c);
+
+            if (board.makeMove(r, c, aiPlayer->getSymbol()))
+                break;
+        }
+
+    }
 
     bool checkGameEnd()
     {
@@ -236,22 +374,37 @@ bool Board::makeMove(int row, int col, char symbol)
     return true;
 }
 
-// Game::handleHumanMove
+
 void Game::handleHumanMove(Player* player)
 {
     int row, col;
 
     while (true)
     {
-        player->getMove(row, col);
+        cout << "Enter row and column (1-" << board.getSize() << "): ";
+
+        if (!(cin >> row >> col))
+        {
+            cout << "Invalid input! Please enter numbers.\n";
+
+            cin.clear();
+            cin.ignore(10000, '\n');
+            continue;
+        }
 
         row--;
         col--;
 
-        if (board.makeMove(row, col, player->getSymbol()))
-            break;
+        if (!board.isValidMove(row, col))
+        {
+            cout << "Invalid move! Try again.\n";
+            continue;
+        }
+        board.makeMove(row, col, player->getSymbol());
+        break;
     }
 }
+
 
 void Game::start()
 {
@@ -265,8 +418,8 @@ void Game::start()
         cout << "Enter Player name(symbol = 'o'): ";
         cin >> name1;
         cout << "Enter Player name(symbol = 'x'): ";
-        cin >> name1;
-        setupPvP(name1, name2, 'o', 'x');
+        cin >> name2;
+        setupPvP(name1, name2, 'O', 'X');
     }
     else if (choice == 2) setupPvC(EASY);
     else setupPvC(HARD);
@@ -278,9 +431,20 @@ void Game::start()
         board.display();
 
         if (dynamic_cast<AIPlayer*>(currentPlayer))
+        {
+            cout << currentPlayer->getName()
+                 << " (" << currentPlayer->getSymbol() << ") is thinking...\n";
+
             handleAIMove((AIPlayer*)currentPlayer);
+        }
         else
+        {
+            cout << "Enter row and column (1-3): " << endl;
+            cout << currentPlayer->getName()
+                 << " (" << currentPlayer->getSymbol() << ") turn: ";
+
             handleHumanMove(currentPlayer);
+        }
 
         if (checkGameEnd())
         {
@@ -293,9 +457,9 @@ void Game::start()
     }
 }
 
-    int main()
-    {
-        Game ticTacToe;
-        ticTacToe.start();
-        return 0;
-    }
+int main()
+{
+    Game ticTacToe;
+    ticTacToe.start();
+    return 0;
+}
